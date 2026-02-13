@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import {useEffect, useRef, useState} from 'react';
 import Card from '../Card/Card';
+import CommentModal from '../CommentModal/CommentModal';
 import styles from './List.module.scss';
-import { List as ListType } from '@/types/board';
+import {List as ListType} from '@/types/board';
 
 interface ListProps {
     listId: string;
@@ -12,12 +13,22 @@ interface ListProps {
     onAddCard: (listId: string, cardTitle: string) => void;
     onDeleteList: (listId: string) => void;
     onDeleteAllCards: (listId: string) => void;
+    onAddComment: (listId: string, cardId: string, commentText: string) => void;
 }
 
-export default function List({ listId, title, cards, onAddCard, onDeleteList, onDeleteAllCards }: ListProps) {
+export default function List({
+                                 listId,
+                                 title,
+                                 cards,
+                                 onAddCard,
+                                 onDeleteList,
+                                 onDeleteAllCards,
+                                 onAddComment
+                             }: ListProps) {
     const [isAddingCard, setIsAddingCard] = useState(false);
     const [newCardTitle, setNewCardTitle] = useState('');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -59,65 +70,85 @@ export default function List({ listId, title, cards, onAddCard, onDeleteList, on
         setIsMenuOpen(false);
     };
 
-    return (
-        <div className={styles.list}>
-            <div className={styles.listHeader}>
-                <h2>{title}</h2>
-                <div className={styles.listMenu} ref={menuRef}>
-                    <button
-                        className={styles.menuButton}
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    >
-                        ⋮
-                    </button>
-                    {isMenuOpen && (
-                        <div className={styles.dropdown}>
-                            <h3 className={styles.dropdownTitle}>List Actions</h3>
-                            <button onClick={handleDeleteList}>Delete List</button>
-                            <button onClick={handleDeleteAllCards}>Delete All Cards</button>
-                        </div>
-                    )}
-                </div>
-            </div>
-            <div className={styles.listCards}>
-                {cards.map(card => (
-                    <Card key={card.id} title={card.title} />
-                ))}
-            </div>
+    const selectedCard = cards.find(card => card.id === selectedCardId);
 
-            {isAddingCard ? (
-                <div className={styles.addCardForm}>
-                    <input
-                        type="text"
-                        placeholder="Enter a card title..."
-                        value={newCardTitle}
-                        onChange={e => setNewCardTitle(e.target.value)}
-                        autoFocus
-                        className={styles.addCardInput}
-                    />
-                    <div className={styles.addCardActions}>
+    return (
+        <>
+            <div className={styles.list}>
+                <div className={styles.listHeader}>
+                    <h2>{title}</h2>
+                    <div className={styles.listMenu} ref={menuRef}>
                         <button
-                            className={styles.addCardSubmit}
-                            onClick={handleAddCard}
+                            className={styles.menuButton}
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
                         >
-                            Create card
+                            ⋮
                         </button>
-                        <button
-                            className={styles.addCardCancel}
-                            onClick={handleCancel}
-                        >
-                            ✕
-                        </button>
+                        {isMenuOpen && (
+                            <div className={styles.dropdown}>
+                                <h3 className={styles.dropdownTitle}>List Actions</h3>
+                                <button onClick={handleDeleteList}>Delete List</button>
+                                <button onClick={handleDeleteAllCards}>Delete All Cards</button>
+                            </div>
+                        )}
                     </div>
                 </div>
-            ) : (
-                <button
-                    className={styles.addCard}
-                    onClick={() => setIsAddingCard(true)}
-                >
-                    + Add another card
-                </button>
+                <div className={styles.listCards}>
+                    {cards.map(card => (
+                        <Card
+                            key={card.id}
+                            title={card.title}
+                            commentsCount={card.comments?.length || 0}
+                            onOpenComments={() => setSelectedCardId(card.id)}
+                        />
+                    ))}
+                </div>
+
+                {isAddingCard ? (
+                    <div className={styles.addCardForm}>
+                        <input
+                            type="text"
+                            placeholder="Enter a card title..."
+                            value={newCardTitle}
+                            onChange={e => setNewCardTitle(e.target.value)}
+                            autoFocus
+                            className={styles.addCardInput}
+                        />
+                        <div className={styles.addCardActions}>
+                            <button
+                                className={styles.addCardSubmit}
+                                onClick={handleAddCard}
+                            >
+                                Create card
+                            </button>
+                            <button
+                                className={styles.addCardCancel}
+                                onClick={handleCancel}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <button
+                        className={styles.addCard}
+                        onClick={() => setIsAddingCard(true)}
+                    >
+                        + Add another card
+                    </button>
+                )}
+            </div>
+
+            {selectedCardId && selectedCard && (
+                <CommentModal
+                    cardTitle={selectedCard.title}
+                    comments={selectedCard.comments || []}
+                    onClose={() => setSelectedCardId(null)}
+                    onAddComment={text => {
+                        onAddComment(listId, selectedCardId, text);
+                    }}
+                />
             )}
-        </div>
+        </>
     );
 }

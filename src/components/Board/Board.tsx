@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import {useState} from 'react';
 import List from '../List/List';
 import styles from './Board.module.scss';
-import { initialBoardData } from '@/data/initialBoard';
-import { BoardData } from '@/types/board';
+import {initialBoardData} from '@/data/initialBoard';
+import {BoardData} from '@/types/board';
 
 export default function Board() {
     const [lists, setLists] = useState<BoardData>(initialBoardData);
@@ -42,7 +42,8 @@ export default function Board() {
                             ...list.cards,
                             {
                                 id: Date.now().toString(),
-                                title: cardTitle
+                                title: cardTitle,
+                                comments: []
                             }
                         ]
                     }
@@ -58,8 +59,40 @@ export default function Board() {
     const handleDeleteAllCards = (listId: string) => {
         setLists(prevLists =>
             prevLists.map(list =>
+                list.id === listId ? {...list, cards: []} : list
+            )
+        );
+    };
+
+    const handleAddComment = (listId: string, cardId: string, commentText: string) => {
+        setLists(prevLists =>
+            prevLists.map(list =>
                 list.id === listId
-                    ? { ...list, cards: [] }
+                    ? {
+                        ...list,
+                        cards: list.cards.map(card =>
+                            card.id === cardId
+                                ? {
+                                    ...card,
+                                    comments: [
+                                        ...(card.comments || []),
+                                        {
+                                            id: Date.now().toString(),
+                                            text: commentText,
+                                            timestamp: new Date().toLocaleString('en-US', {
+                                                month: '2-digit',
+                                                day: '2-digit',
+                                                year: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                                hour12: true
+                                            })
+                                        }
+                                    ]
+                                }
+                                : card
+                        )
+                    }
                     : list
             )
         );
@@ -80,6 +113,7 @@ export default function Board() {
                         onAddCard={handleAddCard}
                         onDeleteList={handleDeleteList}
                         onDeleteAllCards={handleDeleteAllCards}
+                        onAddComment={handleAddComment}
                     />
                 ))}
 
