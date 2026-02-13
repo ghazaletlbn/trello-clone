@@ -51,6 +51,20 @@ export default function Board() {
         );
     };
 
+    const handleDeleteList = (listId: string) => {
+        setLists(prevLists => prevLists.filter(list => list.id !== listId));
+    };
+
+    const handleDeleteAllCards = (listId: string) => {
+        setLists(prevLists =>
+            prevLists.map(list =>
+                list.id === listId
+                    ? { ...list, cards: [] }
+                    : list
+            )
+        );
+    };
+
     return (
         <div className={styles.board}>
             <div className={styles.boardHeader}>
@@ -64,6 +78,8 @@ export default function Board() {
                         title={list.title}
                         cards={list.cards}
                         onAddCard={handleAddCard}
+                        onDeleteList={handleDeleteList}
+                        onDeleteAllCards={handleDeleteAllCards}
                     />
                 ))}
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Card from '../Card/Card';
 import styles from './List.module.scss';
 import { List as ListType } from '@/types/board';
@@ -10,11 +10,31 @@ interface ListProps {
     title: string;
     cards: ListType['cards'];
     onAddCard: (listId: string, cardTitle: string) => void;
+    onDeleteList: (listId: string) => void;
+    onDeleteAllCards: (listId: string) => void;
 }
 
-export default function List({ listId, title, cards, onAddCard }: ListProps) {
+export default function List({ listId, title, cards, onAddCard, onDeleteList, onDeleteAllCards }: ListProps) {
     const [isAddingCard, setIsAddingCard] = useState(false);
     const [newCardTitle, setNewCardTitle] = useState('');
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsMenuOpen(false);
+            }
+        };
+
+        if (isMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isMenuOpen]);
 
     const handleAddCard = () => {
         if (!newCardTitle.trim()) return;
@@ -29,11 +49,35 @@ export default function List({ listId, title, cards, onAddCard }: ListProps) {
         setIsAddingCard(false);
     };
 
+    const handleDeleteList = () => {
+        onDeleteList(listId);
+        setIsMenuOpen(false);
+    };
+
+    const handleDeleteAllCards = () => {
+        onDeleteAllCards(listId);
+        setIsMenuOpen(false);
+    };
+
     return (
         <div className={styles.list}>
             <div className={styles.listHeader}>
                 <h2>{title}</h2>
-                <button>⋮</button>
+                <div className={styles.listMenu} ref={menuRef}>
+                    <button
+                        className={styles.menuButton}
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    >
+                        ⋮
+                    </button>
+                    {isMenuOpen && (
+                        <div className={styles.dropdown}>
+                            <h3 className={styles.dropdownTitle}>List Actions</h3>
+                            <button onClick={handleDeleteList}>Delete List</button>
+                            <button onClick={handleDeleteAllCards}>Delete All Cards</button>
+                        </div>
+                    )}
+                </div>
             </div>
             <div className={styles.listCards}>
                 {cards.map(card => (
