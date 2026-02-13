@@ -27,9 +27,28 @@ export default function Board() {
         setIsAddingList(false);
     };
 
-    const handleCancel = () => {
+    const handleCancelList = () => {
         setNewListTitle('');
         setIsAddingList(false);
+    };
+
+    const handleAddCard = (listId: string, cardTitle: string) => {
+        setLists(prevLists =>
+            prevLists.map(list =>
+                list.id === listId
+                    ? {
+                        ...list,
+                        cards: [
+                            ...list.cards,
+                            {
+                                id: Date.now().toString(),
+                                title: cardTitle
+                            }
+                        ]
+                    }
+                    : list
+            )
+        );
     };
 
     return (
@@ -39,7 +58,13 @@ export default function Board() {
             </div>
             <div className={styles.boardLists}>
                 {lists.map(list => (
-                    <List key={list.id} title={list.title} cards={list.cards} />
+                    <List
+                        key={list.id}
+                        listId={list.id}
+                        title={list.title}
+                        cards={list.cards}
+                        onAddCard={handleAddCard}
+                    />
                 ))}
 
                 {isAddingList ? (
@@ -61,7 +86,7 @@ export default function Board() {
                             </button>
                             <button
                                 className={styles.addListCancel}
-                                onClick={handleCancel}
+                                onClick={handleCancelList}
                             >
                                 ✕
                             </button>
