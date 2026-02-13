@@ -1,9 +1,10 @@
 import Card from '../Card/Card';
 import styles from './List.module.scss';
+import { List as ListType } from '@/types/board';
 
 interface ListProps {
     title: string;
-    cards: { id: string; title: string }[];
+    cards:  ListType['cards'];
 }
 
 export default function List({ title, cards }: ListProps) {

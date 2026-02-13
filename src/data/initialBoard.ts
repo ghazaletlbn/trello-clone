@@ -1,4 +1,6 @@
-export const initialBoardData = [
+import { BoardData } from '@/types/board';
+
+export const initialBoardData: BoardData = [
     {
         id: '1',
         title: 'Todo',
