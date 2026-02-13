@@ -14,7 +14,7 @@ export default function Board() {
                 <h1>Demo Board</h1>
             </div>
             <div className={styles.boardLists}>
-                {initialBoardData.map(list => (
+                {lists.map(list => (
                     <List key={list.id} title={list.title} cards={list.cards} />
                 ))}
                 <button className={styles.addList}>+ Add another list</button>
