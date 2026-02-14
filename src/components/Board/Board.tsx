@@ -1,10 +1,24 @@
 'use client';
 
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import List from '../List/List';
 import Card from '../Card/Card';
 import styles from './Board.module.scss';
-import {closestCorners, DndContext, DragEndEvent, DragOverlay, DragStartEvent} from '@dnd-kit/core';
+import {
+    closestCorners,
+    CollisionDetection,
+    DndContext,
+    DragEndEvent,
+    DragOverlay,
+    DragStartEvent,
+    getFirstCollision,
+    PointerSensor,
+    pointerWithin,
+    rectIntersection,
+    TouchSensor,
+    useSensor,
+    useSensors
+} from '@dnd-kit/core';
 import {useBoardState} from '@/hooks/useBoardState';
 import {useDragAndDrop} from '@/hooks/useDragAndDrop';
 import {horizontalListSortingStrategy, SortableContext} from '@dnd-kit/sortable';
@@ -26,7 +40,16 @@ export default function Board() {
         handleAddComment
     } = useBoardState();
 
-    const {sensors, handleDragOver, handleDragEnd} = useDragAndDrop(lists, setLists);
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {distance: 5},
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {delay: 250, tolerance: 5},
+        })
+    );
+
+    const {handleDragOver, handleDragEnd} = useDragAndDrop(lists, setLists);
 
     const [mounted, setMounted] = useState(false);
     const [activeCard, setActiveCard] = useState<{
@@ -64,6 +87,36 @@ export default function Board() {
         setActiveList(null);
     };
 
+    const customCollisionDetection: CollisionDetection = useCallback((args) => {
+        const {active, droppableContainers} = args;
+
+        if (active.data.current?.type === 'Column') {
+            const columnContainers = droppableContainers.filter(
+                (container) => container.data.current?.type === 'Column'
+            );
+            return closestCorners({
+                ...args,
+                droppableContainers: columnContainers,
+            });
+        }
+
+        const pointerCollisions = pointerWithin(args);
+        const intersections = pointerCollisions.length > 0 ? pointerCollisions : rectIntersection(args);
+
+        const overId = getFirstCollision(intersections, 'id');
+
+        if (overId != null) {
+            const overContainer = droppableContainers.find((container) => container.id === overId);
+            if (overContainer) {
+                if (overContainer.data.current?.type === 'Column') {
+                    return [{id: overId}];
+                }
+            }
+        }
+
+        return closestCorners(args);
+    }, []);
+
     if (!mounted) {
         return (
             <div className={styles.board}>
@@ -72,10 +125,25 @@ export default function Board() {
                 </div>
                 <div className={styles.boardLists}>
                     {lists.map(list => (
-                        <div key={list.id} className={styles.listPreview} style={{minWidth: '280px', margin: '0 10px'}}>
-                            <h2>{list.title}</h2>
+                        <div key={list.id} style={{
+                            backgroundColor: '#f1f2f4',
+                            borderRadius: '12px',
+                            padding: '12px',
+                            minWidth: '280px',
+                            width: '280px',
+                            margin: '0 8px 0 0',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            maxHeight: '100%'
+                        }}>
+                            <div style={{padding: '8px', fontWeight: '600', fontSize: '14px', color: '#172b4d'}}>
+                                {list.title}
+                            </div>
                         </div>
                     ))}
+                    <button className={styles.addList}>
+                        + Add another list
+                    </button>
                 </div>
             </div>
         );
@@ -88,13 +156,16 @@ export default function Board() {
             </div>
             <DndContext
                 sensors={sensors}
-                collisionDetection={closestCorners}
+                collisionDetection={customCollisionDetection}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEndWrapper}
             >
                 <div className={styles.boardLists}>
-                    <SortableContext items={lists.map(l => l.id)} strategy={horizontalListSortingStrategy}>
+                    <SortableContext
+                        items={lists.map(l => l.id)}
+                        strategy={horizontalListSortingStrategy}
+                    >
                         {lists.map(list => (
                             <List
                                 key={list.id}
@@ -144,9 +215,12 @@ export default function Board() {
                     )}
                 </div>
 
-                <DragOverlay>
+                <DragOverlay dropAnimation={{
+                    duration: 250,
+                    easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+                }}>
                     {activeCard ? (
-                        <div style={{transform: 'rotate(5deg)', cursor: 'grabbing'}}>
+                        <div style={{transform: 'rotate(4deg)', cursor: 'grabbing'}}>
                             <Card
                                 title={activeCard.title}
                                 commentsCount={activeCard.commentsCount}
@@ -157,20 +231,26 @@ export default function Board() {
                     ) : null}
 
                     {activeList ? (
-                        <List
-                            listId={activeList.id}
-                            title={activeList.title}
-                            cards={activeList.cards}
-                            onAddCard={() => {
-                            }}
-                            onDeleteList={() => {
-                            }}
-                            onDeleteAllCards={() => {
-                            }}
-                            onAddComment={() => {
-                            }}
-                            isOverlay={true}
-                        />
+                        <div style={{
+                            opacity: 0.8,
+                            transform: 'rotate(2deg)',
+                            height: '100%'
+                        }}>
+                            <List
+                                listId={activeList.id}
+                                title={activeList.title}
+                                cards={activeList.cards}
+                                onAddCard={() => {
+                                }}
+                                onDeleteList={() => {
+                                }}
+                                onDeleteAllCards={() => {
+                                }}
+                                onAddComment={() => {
+                                }}
+                                isOverlay={true}
+                            />
+                        </div>
                     ) : null}
                 </DragOverlay>
             </DndContext>
