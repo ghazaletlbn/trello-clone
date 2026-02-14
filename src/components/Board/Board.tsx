@@ -1,134 +1,28 @@
 'use client';
 
-import {useState} from 'react';
 import List from '../List/List';
 import styles from './Board.module.scss';
-import {initialBoardData} from '@/data/initialBoard';
-import {BoardData} from '@/types/board';
-import {closestCorners, DndContext, DragEndEvent, PointerSensor, useSensor, useSensors} from "@dnd-kit/core";
-import {arrayMove} from "@dnd-kit/sortable";
+import {closestCorners, DndContext} from '@dnd-kit/core';
+import {useBoardState} from '@/hooks/useBoardState';
+import {useDragAndDrop} from '@/hooks/useDragAndDrop';
 
 export default function Board() {
-    const [lists, setLists] = useState<BoardData>(initialBoardData);
-    const [isAddingList, setIsAddingList] = useState(false);
-    const [newListTitle, setNewListTitle] = useState('');
+    const {
+        lists,
+        setLists,
+        isAddingList,
+        setIsAddingList,
+        newListTitle,
+        setNewListTitle,
+        handleAddList,
+        handleCancelList,
+        handleAddCard,
+        handleDeleteList,
+        handleDeleteAllCards,
+        handleAddComment
+    } = useBoardState();
 
-    const sensors = useSensors(
-        useSensor(PointerSensor, {
-            activationConstraint: {
-                distance: 5,
-            },
-        })
-    );
-
-    const handleDragEnd = (event: DragEndEvent) => {
-        const {active, over} = event;
-
-        if (!over || active.id === over.id) return;
-
-        setLists(prevLists =>
-            prevLists.map(list => {
-                const oldIndex = list.cards.findIndex(c => c.id === active.id);
-                const newIndex = list.cards.findIndex(c => c.id === over.id);
-
-                if (oldIndex === -1 || newIndex === -1) {
-                    return list;
-                }
-
-                return {
-                    ...list,
-                    cards: arrayMove(list.cards, oldIndex, newIndex),
-                };
-            })
-        );
-    };
-
-    const handleAddList = () => {
-        if (!newListTitle.trim()) return;
-
-        setLists(prevLists => [
-            ...prevLists,
-            {
-                id: Date.now().toString(),
-                title: newListTitle.trim(),
-                cards: []
-            }
-        ]);
-
-        setNewListTitle('');
-        setIsAddingList(false);
-    };
-
-    const handleCancelList = () => {
-        setNewListTitle('');
-        setIsAddingList(false);
-    };
-
-    const handleAddCard = (listId: string, cardTitle: string) => {
-        setLists(prevLists =>
-            prevLists.map(list =>
-                list.id === listId
-                    ? {
-                        ...list,
-                        cards: [
-                            ...list.cards,
-                            {
-                                id: Date.now().toString(),
-                                title: cardTitle,
-                                comments: []
-                            }
-                        ]
-                    }
-                    : list
-            )
-        );
-    };
-
-    const handleDeleteList = (listId: string) => {
-        setLists(prevLists => prevLists.filter(list => list.id !== listId));
-    };
-
-    const handleDeleteAllCards = (listId: string) => {
-        setLists(prevLists =>
-            prevLists.map(list =>
-                list.id === listId ? {...list, cards: []} : list
-            )
-        );
-    };
-
-    const handleAddComment = (listId: string, cardId: string, commentText: string) => {
-        setLists(prevLists =>
-            prevLists.map(list =>
-                list.id === listId
-                    ? {
-                        ...list,
-                        cards: list.cards.map(card =>
-                            card.id === cardId
-                                ? {
-                                    ...card,
-                                    comments: [
-                                        ...(card.comments || []),
-                                        {
-                                            id: Date.now().toString(),
-                                            text: commentText,
-                                            timestamp: new Date().toLocaleString('en-US', {
-                                                month: '2-digit',
-                                                day: '2-digit',
-                                                year: 'numeric',
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                                hour12: true
-                                            })
-                                        }
-                                    ]
-                                }
-                                : card
-                        )
-                    }
-                    : list
-            )
-        );
-    };
+    const {sensors, handleDragEnd} = useDragAndDrop(setLists);
 
     return (
         <div className={styles.board}>
