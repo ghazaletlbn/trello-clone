@@ -1,7 +1,7 @@
 'use client';
 
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import {useSortable} from '@dnd-kit/sortable';
+import {CSS} from '@dnd-kit/utilities';
 import Card from '../Card/Card';
 
 interface SortableCardProps {
@@ -12,10 +12,11 @@ interface SortableCardProps {
 }
 
 export default function SortableCard({
-id,
-title,
-commentsCount,
-onOpenComments,}: SortableCardProps) {
+                                         id,
+                                         title,
+                                         commentsCount,
+                                         onOpenComments,
+                                     }: SortableCardProps) {
     const {
         setNodeRef,
         attributes,
@@ -23,13 +24,13 @@ onOpenComments,}: SortableCardProps) {
         transform,
         transition,
         isDragging,
-    } = useSortable({ id });
+    } = useSortable({id});
 
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.5 : 1,
-        cursor: 'grab',
+        opacity: isDragging ? 0.3 : 1,
+        cursor: isDragging ? 'grabbing' : 'grab',
     };
 
     return (
