@@ -1,8 +1,10 @@
 'use client';
 
+import {useState} from 'react';
 import List from '../List/List';
+import Card from '../Card/Card';
 import styles from './Board.module.scss';
-import {closestCorners, DndContext} from '@dnd-kit/core';
+import {closestCorners, DndContext, DragEndEvent, DragOverlay, DragStartEvent} from '@dnd-kit/core';
 import {useBoardState} from '@/hooks/useBoardState';
 import {useDragAndDrop} from '@/hooks/useDragAndDrop';
 
@@ -24,6 +26,32 @@ export default function Board() {
 
     const {sensors, handleDragEnd} = useDragAndDrop(setLists);
 
+    const [activeCard, setActiveCard] = useState<{
+        id: string;
+        title: string;
+        commentsCount: number;
+    } | null>(null);
+
+    const handleDragStart = (event: DragStartEvent) => {
+        const {active} = event;
+        for (const list of lists) {
+            const card = list.cards.find(c => c.id === active.id);
+            if (card) {
+                setActiveCard({
+                    id: card.id,
+                    title: card.title,
+                    commentsCount: card.comments?.length || 0,
+                });
+                break;
+            }
+        }
+    };
+
+    const handleDragEndWrapper = (event: DragEndEvent) => {
+        handleDragEnd(event);
+        setActiveCard(null);
+    };
+
     return (
         <div className={styles.board}>
             <div className={styles.boardHeader}>
@@ -32,7 +60,8 @@ export default function Board() {
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCorners}
-                onDragEnd={handleDragEnd}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEndWrapper}
             >
                 <div className={styles.boardLists}>
                     {lists.map(list => (
@@ -82,6 +111,22 @@ export default function Board() {
                         </button>
                     )}
                 </div>
+
+                <DragOverlay>
+                    {activeCard ? (
+                        <div style={{
+                            transform: 'rotate(5deg)',
+                            cursor: 'grabbing',
+                        }}>
+                            <Card
+                                title={activeCard.title}
+                                commentsCount={activeCard.commentsCount}
+                                onOpenComments={() => {
+                                }}
+                            />
+                        </div>
+                    ) : null}
+                </DragOverlay>
             </DndContext>
         </div>
     );
