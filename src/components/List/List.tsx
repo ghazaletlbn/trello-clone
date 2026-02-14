@@ -5,8 +5,8 @@ import CommentModal from '../CommentModal/CommentModal';
 import styles from './List.module.scss';
 import {List as ListType} from '@/types/board';
 import {SortableContext, verticalListSortingStrategy} from "@dnd-kit/sortable";
-import {useDroppable} from '@dnd-kit/core';
 import SortableCard from "@/components/SortableCard/SortableCard";
+import {useDroppable} from '@dnd-kit/core';
 
 interface ListProps {
     listId: string;
@@ -104,8 +104,9 @@ export default function List({
                     ref={setNodeRef}
                     className={styles.listCards}
                     style={{
-                        backgroundColor: isOver ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-                        transition: 'background-color 200ms ease',
+                        backgroundColor: isOver ? '#e8eaed' : undefined,
+                        transition: 'background-color 0.15s ease',
+                        minHeight: cards.length === 0 ? '50px' : undefined,
                     }}
                 >
                     <SortableContext
