@@ -1,10 +1,12 @@
 'use client';
 
 import {useEffect, useRef, useState} from 'react';
-import Card from '../Card/Card';
 import CommentModal from '../CommentModal/CommentModal';
 import styles from './List.module.scss';
 import {List as ListType} from '@/types/board';
+import {SortableContext, verticalListSortingStrategy} from "@dnd-kit/sortable";
+import SortableCard from "@/components/SortableCard/SortableCard";
+
 
 interface ListProps {
     listId: string;
@@ -94,15 +96,22 @@ export default function List({
                     </div>
                 </div>
                 <div className={styles.listCards}>
-                    {cards.map(card => (
-                        <Card
-                            key={card.id}
-                            title={card.title}
-                            commentsCount={card.comments?.length || 0}
-                            onOpenComments={() => setSelectedCardId(card.id)}
-                        />
-                    ))}
+                    <SortableContext
+                        items={cards.map(card => card.id)}
+                        strategy={verticalListSortingStrategy}
+                    >
+                        {cards.map(card => (
+                            <SortableCard
+                                key={card.id}
+                                id={card.id}
+                                title={card.title}
+                                commentsCount={card.comments?.length || 0}
+                                onOpenComments={() => setSelectedCardId(card.id)}
+                            />
+                        ))}
+                    </SortableContext>
                 </div>
+
 
                 {isAddingCard ? (
                     <div className={styles.addCardForm}>
