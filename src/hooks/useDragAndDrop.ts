@@ -1,8 +1,9 @@
-import {DragEndEvent, PointerSensor, TouchSensor, useSensor, useSensors} from '@dnd-kit/core';
+import {DragEndEvent, DragOverEvent, PointerSensor, TouchSensor, useSensor, useSensors} from '@dnd-kit/core';
 import {arrayMove} from '@dnd-kit/sortable';
 import {BoardData} from '@/types/board';
 
 export const useDragAndDrop = (
+    lists: BoardData,
     setLists: React.Dispatch<React.SetStateAction<BoardData>>
 ) => {
     const sensors = useSensors(
@@ -14,83 +15,109 @@ export const useDragAndDrop = (
         })
     );
 
-    const handleDragEnd = (event: DragEndEvent) => {
+    const findContainer = (id: string) => {
+        if (lists.find(list => list.id === id)) {
+            return id;
+        }
+        return lists.find(list => list.cards.some(card => card.id === id))?.id;
+    };
+
+    const handleDragOver = (event: DragOverEvent) => {
         const {active, over} = event;
         if (!over) return;
 
-        setLists(prevLists => {
-            const sourceListIndex = prevLists.findIndex(list =>
-                list.cards.some(card => card.id === active.id)
-            );
+        const activeId = active.id.toString();
+        const overId = over.id.toString();
 
-            if (sourceListIndex === -1) return prevLists;
+        const activeContainer = findContainer(activeId);
+        const overContainer = findContainer(overId);
 
-            const sourceList = prevLists[sourceListIndex];
-            const sourceCardIndex = sourceList.cards.findIndex(
-                card => card.id === active.id
-            );
-            const draggedCard = sourceList.cards[sourceCardIndex];
+        if (
+            !activeContainer ||
+            !overContainer ||
+            activeContainer === overContainer
+        ) {
+            return;
+        }
 
-            let targetListIndex = prevLists.findIndex(list =>
-                list.cards.some(card => card.id === over.id)
-            );
+        setLists((prev) => {
+            const activeItems = prev.find(l => l.id === activeContainer)?.cards || [];
+            const overItems = prev.find(l => l.id === overContainer)?.cards || [];
+            const activeIndex = activeItems.findIndex(c => c.id === activeId);
+            const overIndex = overItems.findIndex(c => c.id === overId);
 
-            if (targetListIndex === -1) {
-                targetListIndex = prevLists.findIndex(
-                    list => list.id === over.id
-                );
+            let newIndex;
+
+            if (lists.find(l => l.id === overId)) {
+                newIndex = overItems.length + 1;
+            } else {
+                const isBelowOverItem =
+                    over &&
+                    active.rect.current.translated &&
+                    active.rect.current.translated.top >
+                    over.rect.top + over.rect.height;
+
+                const modifier = isBelowOverItem ? 1 : 0;
+                newIndex = overIndex >= 0 ? overIndex + modifier : overItems.length + 1;
             }
 
-            if (targetListIndex === -1) return prevLists;
-
-            if (sourceListIndex === targetListIndex) {
-                const targetCardIndex = sourceList.cards.findIndex(
-                    card => card.id === over.id
-                );
-
-                if (targetCardIndex === -1) return prevLists;
-
-                const newLists = [...prevLists];
-                newLists[sourceListIndex] = {
-                    ...sourceList,
-                    cards: arrayMove(
-                        sourceList.cards,
-                        sourceCardIndex,
-                        targetCardIndex
-                    ),
-                };
-                return newLists;
-            }
-
-            const newLists = [...prevLists];
-
-            newLists[sourceListIndex] = {
-                ...sourceList,
-                cards: sourceList.cards.filter(c => c.id !== active.id),
-            };
-
-            const targetList = newLists[targetListIndex];
-            const targetCardIndex = targetList.cards.findIndex(
-                card => card.id === over.id
-            );
-
-            const insertIndex =
-                targetCardIndex === -1
-                    ? targetList.cards.length
-                    : targetCardIndex;
-
-            newLists[targetListIndex] = {
-                ...targetList,
-                cards: [
-                    ...targetList.cards.slice(0, insertIndex),
-                    draggedCard,
-                    ...targetList.cards.slice(insertIndex),
-                ],
-            };
-
-            return newLists;
+            return prev.map(list => {
+                if (list.id === activeContainer) {
+                    return {
+                        ...list,
+                        cards: list.cards.filter(c => c.id !== activeId)
+                    };
+                }
+                if (list.id === overContainer) {
+                    const newCards = [
+                        ...list.cards.slice(0, newIndex),
+                        activeItems[activeIndex],
+                        ...list.cards.slice(newIndex, list.cards.length)
+                    ];
+                    return {
+                        ...list,
+                        cards: newCards
+                    };
+                }
+                return list;
+            });
         });
     };
 
-    return {sensors, handleDragEnd};
+    const handleDragEnd = (event: DragEndEvent) => {
+        const {active, over} = event;
+
+        if (!over) return;
+
+        const activeId = active.id.toString();
+        const overId = over.id.toString();
+
+        const activeContainer = findContainer(activeId);
+        const overContainer = findContainer(overId);
+
+        if (
+            activeContainer &&
+            overContainer &&
+            activeContainer === overContainer
+        ) {
+            const listIndex = lists.findIndex(l => l.id === activeContainer);
+            const list = lists[listIndex];
+
+            const activeIndex = list.cards.findIndex(c => c.id === activeId);
+            const overIndex = list.cards.findIndex(c => c.id === overId);
+
+            if (activeIndex !== overIndex) {
+                setLists((prev) => {
+                    const newLists = [...prev];
+                    newLists[listIndex] = {
+                        ...list,
+                        cards: arrayMove(list.cards, activeIndex, overIndex)
+                    };
+                    return newLists;
+                });
+            }
+        }
+    };
+
+    return {sensors, handleDragOver, handleDragEnd};
 };

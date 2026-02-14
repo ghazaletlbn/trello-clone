@@ -24,7 +24,7 @@ export default function Board() {
         handleAddComment
     } = useBoardState();
 
-    const {sensors, handleDragEnd} = useDragAndDrop(setLists);
+    const {sensors, handleDragOver, handleDragEnd} = useDragAndDrop(lists, setLists);
 
     const [activeCard, setActiveCard] = useState<{
         id: string;
@@ -61,6 +61,7 @@ export default function Board() {
                 sensors={sensors}
                 collisionDetection={closestCorners}
                 onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
                 onDragEnd={handleDragEndWrapper}
             >
                 <div className={styles.boardLists}>
