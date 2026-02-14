@@ -1,12 +1,12 @@
 'use client';
 
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import CommentModal from '../CommentModal/CommentModal';
 import styles from './List.module.scss';
 import {List as ListType} from '@/types/board';
-import {SortableContext, verticalListSortingStrategy} from "@dnd-kit/sortable";
+import {SortableContext, useSortable, verticalListSortingStrategy} from "@dnd-kit/sortable";
+import {CSS} from "@dnd-kit/utilities";
 import SortableCard from "@/components/SortableCard/SortableCard";
-import {useDroppable} from '@dnd-kit/core';
 
 interface ListProps {
     listId: string;
@@ -16,6 +16,7 @@ interface ListProps {
     onDeleteList: (listId: string) => void;
     onDeleteAllCards: (listId: string) => void;
     onAddComment: (listId: string, cardId: string, commentText: string) => void;
+    isOverlay?: boolean;
 }
 
 export default function List({
@@ -25,7 +26,8 @@ export default function List({
                                  onAddCard,
                                  onDeleteList,
                                  onDeleteAllCards,
-                                 onAddComment
+                                 onAddComment,
+                                 isOverlay = false
                              }: ListProps) {
     const [isAddingCard, setIsAddingCard] = useState(false);
     const [newCardTitle, setNewCardTitle] = useState('');
@@ -33,11 +35,40 @@ export default function List({
     const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
-    const {setNodeRef, isOver} = useDroppable({
-        id: listId,
+    const sortableId = useMemo(() => isOverlay ? `${listId}-overlay` : listId, [listId, isOverlay]);
+
+    const {
+        setNodeRef,
+        attributes,
+        listeners,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({
+        id: sortableId,
+        data: {
+            type: 'Column',
+            list: {id: listId, title, cards}
+        },
+        disabled: isOverlay
     });
 
+    const style = {
+        transform: CSS.Translate.toString(transform),
+        transition,
+        opacity: isDragging ? 0.3 : 1,
+    };
+
+    const overlayStyle = {
+        transform: CSS.Translate.toString(transform),
+        cursor: 'grabbing',
+        opacity: 1,
+        boxShadow: '0 5px 15px rgba(0,0,0,0.25)',
+    };
+
     useEffect(() => {
+        if (isOverlay) return;
+
         const handleClickOutside = (event: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setIsMenuOpen(false);
@@ -51,11 +82,10 @@ export default function List({
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isMenuOpen]);
+    }, [isMenuOpen, isOverlay]);
 
     const handleAddCard = () => {
         if (!newCardTitle.trim()) return;
-
         onAddCard(listId, newCardTitle.trim());
         setNewCardTitle('');
         setIsAddingCard(false);
@@ -80,32 +110,44 @@ export default function List({
 
     return (
         <>
-            <div className={styles.list}>
-                <div className={styles.listHeader}>
+            <div
+                ref={setNodeRef}
+                style={isOverlay ? overlayStyle : style}
+                className={styles.list}
+                {...attributes}
+            >
+                <div
+                    className={styles.listHeader}
+                    {...listeners}
+                    style={{cursor: isOverlay ? 'grabbing' : 'grab'}}
+                >
                     <h2>{title}</h2>
-                    <div className={styles.listMenu} ref={menuRef}>
-                        <button
-                            className={styles.menuButton}
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    {!isOverlay && (
+                        <div
+                            className={styles.listMenu}
+                            ref={menuRef}
+                            onPointerDown={(e) => e.stopPropagation()}
                         >
-                            ⋮
-                        </button>
-                        {isMenuOpen && (
-                            <div className={styles.dropdown}>
-                                <h3 className={styles.dropdownTitle}>List Actions</h3>
-                                <button onClick={handleDeleteList}>Delete List</button>
-                                <button onClick={handleDeleteAllCards}>Delete All Cards</button>
-                            </div>
-                        )}
-                    </div>
+                            <button
+                                className={styles.menuButton}
+                                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            >
+                                ⋮
+                            </button>
+                            {isMenuOpen && (
+                                <div className={styles.dropdown}>
+                                    <h3 className={styles.dropdownTitle}>List Actions</h3>
+                                    <button onClick={handleDeleteList}>Delete List</button>
+                                    <button onClick={handleDeleteAllCards}>Delete All Cards</button>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <div
-                    ref={setNodeRef}
                     className={styles.listCards}
                     style={{
-                        backgroundColor: isOver ? '#e8eaed' : undefined,
-                        transition: 'background-color 0.15s ease',
                         minHeight: cards.length === 0 ? '50px' : undefined,
                     }}
                 >
@@ -125,8 +167,7 @@ export default function List({
                     </SortableContext>
                 </div>
 
-
-                {isAddingCard ? (
+                {!isOverlay && (isAddingCard ? (
                     <div className={styles.addCardForm}>
                         <input
                             type="text"
@@ -158,7 +199,7 @@ export default function List({
                     >
                         + Add another card
                     </button>
-                )}
+                ))}
             </div>
 
             {selectedCardId && selectedCard && (

@@ -29,6 +29,10 @@ export const useDragAndDrop = (
         const activeId = active.id.toString();
         const overId = over.id.toString();
 
+        if (active.data.current?.type === 'Column') {
+            return;
+        }
+
         const activeContainer = findContainer(activeId);
         const overContainer = findContainer(overId);
 
@@ -86,11 +90,21 @@ export const useDragAndDrop = (
 
     const handleDragEnd = (event: DragEndEvent) => {
         const {active, over} = event;
-
         if (!over) return;
 
         const activeId = active.id.toString();
         const overId = over.id.toString();
+
+        if (active.data.current?.type === 'Column') {
+            if (activeId !== overId) {
+                setLists((lists) => {
+                    const oldIndex = lists.findIndex((l) => l.id === activeId);
+                    const newIndex = lists.findIndex((l) => l.id === overId);
+                    return arrayMove(lists, oldIndex, newIndex);
+                });
+            }
+            return;
+        }
 
         const activeContainer = findContainer(activeId);
         const overContainer = findContainer(overId);
@@ -119,5 +133,9 @@ export const useDragAndDrop = (
         }
     };
 
-    return {sensors, handleDragOver, handleDragEnd};
+    return {
+        sensors,
+        handleDragOver,
+        handleDragEnd
+    };
 };
