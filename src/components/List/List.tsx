@@ -5,8 +5,8 @@ import CommentModal from '../CommentModal/CommentModal';
 import styles from './List.module.scss';
 import {List as ListType} from '@/types/board';
 import {SortableContext, verticalListSortingStrategy} from "@dnd-kit/sortable";
+import {useDroppable} from '@dnd-kit/core';
 import SortableCard from "@/components/SortableCard/SortableCard";
-
 
 interface ListProps {
     listId: string;
@@ -32,6 +32,10 @@ export default function List({
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    const {setNodeRef, isOver} = useDroppable({
+        id: listId,
+    });
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -95,7 +99,15 @@ export default function List({
                         )}
                     </div>
                 </div>
-                <div className={styles.listCards}>
+
+                <div
+                    ref={setNodeRef}
+                    className={styles.listCards}
+                    style={{
+                        backgroundColor: isOver ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                        transition: 'background-color 200ms ease',
+                    }}
+                >
                     <SortableContext
                         items={cards.map(card => card.id)}
                         strategy={verticalListSortingStrategy}
