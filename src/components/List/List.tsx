@@ -1,12 +1,14 @@
 'use client';
 
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useMemo, useState} from 'react';
 import CommentModal from '../CommentModal/CommentModal';
 import styles from './List.module.scss';
 import {List as ListType} from '@/types/board';
 import {SortableContext, useSortable, verticalListSortingStrategy} from "@dnd-kit/sortable";
 import {CSS} from "@dnd-kit/utilities";
 import SortableCard from "@/components/SortableCard/SortableCard";
+import ListMenu from './ListMenu';
+import ListFooter from './ListFooter';
 
 interface ListProps {
     listId: string;
@@ -29,11 +31,7 @@ export default function List({
                                  onAddComment,
                                  isOverlay = false
                              }: ListProps) {
-    const [isAddingCard, setIsAddingCard] = useState(false);
-    const [newCardTitle, setNewCardTitle] = useState('');
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
-    const menuRef = useRef<HTMLDivElement>(null);
 
     const sortableId = useMemo(() => isOverlay ? `${listId}-overlay` : listId, [listId, isOverlay]);
 
@@ -66,46 +64,6 @@ export default function List({
         boxShadow: '0 5px 15px rgba(0,0,0,0.25)',
     };
 
-    useEffect(() => {
-        if (isOverlay) return;
-
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setIsMenuOpen(false);
-            }
-        };
-
-        if (isMenuOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isMenuOpen, isOverlay]);
-
-    const handleAddCard = () => {
-        if (!newCardTitle.trim()) return;
-        onAddCard(listId, newCardTitle.trim());
-        setNewCardTitle('');
-        setIsAddingCard(false);
-    };
-
-    const handleCancel = () => {
-        setNewCardTitle('');
-        setIsAddingCard(false);
-    };
-
-    const handleDeleteList = () => {
-        onDeleteList(listId);
-        setIsMenuOpen(false);
-    };
-
-    const handleDeleteAllCards = () => {
-        onDeleteAllCards(listId);
-        setIsMenuOpen(false);
-    };
-
     const selectedCard = cards.find(card => card.id === selectedCardId);
 
     return (
@@ -123,25 +81,10 @@ export default function List({
                 >
                     <h2>{title}</h2>
                     {!isOverlay && (
-                        <div
-                            className={styles.listMenu}
-                            ref={menuRef}
-                            onPointerDown={(e) => e.stopPropagation()}
-                        >
-                            <button
-                                className={styles.menuButton}
-                                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            >
-                                ⋮
-                            </button>
-                            {isMenuOpen && (
-                                <div className={styles.dropdown}>
-                                    <h3 className={styles.dropdownTitle}>List Actions</h3>
-                                    <button onClick={handleDeleteList}>Delete List</button>
-                                    <button onClick={handleDeleteAllCards}>Delete All Cards</button>
-                                </div>
-                            )}
-                        </div>
+                        <ListMenu
+                            onDeleteList={() => onDeleteList(listId)}
+                            onDeleteAllCards={() => onDeleteAllCards(listId)}
+                        />
                     )}
                 </div>
 
@@ -167,39 +110,9 @@ export default function List({
                     </SortableContext>
                 </div>
 
-                {!isOverlay && (isAddingCard ? (
-                    <div className={styles.addCardForm}>
-                        <input
-                            type="text"
-                            placeholder="Enter a card title..."
-                            value={newCardTitle}
-                            onChange={e => setNewCardTitle(e.target.value)}
-                            autoFocus
-                            className={styles.addCardInput}
-                        />
-                        <div className={styles.addCardActions}>
-                            <button
-                                className={styles.addCardSubmit}
-                                onClick={handleAddCard}
-                            >
-                                Create card
-                            </button>
-                            <button
-                                className={styles.addCardCancel}
-                                onClick={handleCancel}
-                            >
-                                ✕
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <button
-                        className={styles.addCard}
-                        onClick={() => setIsAddingCard(true)}
-                    >
-                        + Add another card
-                    </button>
-                ))}
+                {!isOverlay && (
+                    <ListFooter onAddCard={(title) => onAddCard(listId, title)}/>
+                )}
             </div>
 
             {selectedCardId && selectedCard && (
