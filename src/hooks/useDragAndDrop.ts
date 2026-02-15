@@ -96,10 +96,11 @@ export const useDragAndDrop = (
         const overId = over.id.toString();
 
         if (active.data.current?.type === 'Column') {
-            if (activeId !== overId) {
+            const overContainerId = findContainer(overId);
+            if (overContainerId && activeId !== overContainerId) {
                 setLists((lists) => {
                     const oldIndex = lists.findIndex((l) => l.id === activeId);
-                    const newIndex = lists.findIndex((l) => l.id === overId);
+                    const newIndex = lists.findIndex((l) => l.id === overContainerId);
                     return arrayMove(lists, oldIndex, newIndex);
                 });
             }

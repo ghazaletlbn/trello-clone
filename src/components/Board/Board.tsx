@@ -4,7 +4,7 @@ import {useEffect, useState} from 'react';
 import List from '../List/List';
 import Card from '../Card/Card';
 import styles from './Board.module.scss';
-import {closestCorners, DndContext, DragEndEvent, DragOverlay, DragStartEvent} from '@dnd-kit/core';
+import {DndContext, DragEndEvent, DragOverlay, DragStartEvent, pointerWithin} from '@dnd-kit/core';
 import {useBoardState} from '@/hooks/useBoardState';
 import {useDragAndDrop} from '@/hooks/useDragAndDrop';
 import {horizontalListSortingStrategy, SortableContext} from '@dnd-kit/sortable';
@@ -88,7 +88,7 @@ export default function Board() {
             </div>
             <DndContext
                 sensors={sensors}
-                collisionDetection={closestCorners}
+                collisionDetection={pointerWithin}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEndWrapper}
