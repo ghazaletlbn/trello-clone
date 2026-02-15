@@ -9,6 +9,7 @@ import {useBoardState} from '@/hooks/useBoardState';
 import {useDragAndDrop} from '@/hooks/useDragAndDrop';
 import {horizontalListSortingStrategy, SortableContext} from '@dnd-kit/sortable';
 import {List as ListType} from '@/types/board';
+import ListSkeleton from "@/components/ListSkeleton/ListSkeleton";
 
 export default function Board() {
     const {
@@ -72,9 +73,7 @@ export default function Board() {
                 </div>
                 <div className={styles.boardLists}>
                     {lists.map(list => (
-                        <div key={list.id} className={styles.listPreview} style={{minWidth: '280px', margin: '0 10px'}}>
-                            <h2>{list.title}</h2>
-                        </div>
+                        <ListSkeleton key={list.id} title={list.title}/>
                     ))}
                 </div>
             </div>
