@@ -12,6 +12,18 @@ import {List as ListType} from '@/types/board';
 import ListSkeleton from "@/components/ListSkeleton/ListSkeleton";
 import InlineForm from "@/components/InlineForm/InlineForm";
 
+/*
+ * TODO: ARCHITECTURE IMPROVEMENT (Deferred due to tight deadline)
+ *
+ * NOTE: Currently, we are passing multiple individual handler functions (props) to the <List /> component.
+ * I prioritized shipping the core logic, but here is the refactoring plan:
+ *
+ * 1. Action Grouping: Bundle all handlers (add, delete, update) into a single `boardActions` object.
+ * 2. Optimization: Memoize this object using `useMemo` to prevent child re-renders.
+ * 3. Cleanup: Pass a single `actions={boardActions}` prop instead of 5+ separate props.
+ */
+
+
 export default function Board() {
     const {
         lists,

@@ -2,6 +2,18 @@ import {DragEndEvent, DragOverEvent, PointerSensor, TouchSensor, useSensor, useS
 import {arrayMove} from '@dnd-kit/sortable';
 import {BoardData} from '@/types/board';
 
+/*
+ * TODO: REFACTORING PLANNED (Deferred due to tight deadline)
+ *
+ * NOTE: I am aware that this hook contains complex logic and could be optimized.
+ * Due to time constraints, I focused on functionality first.
+ *
+ * Future improvements plan:
+ * 1. Performance: Wrap `handleDragOver` and `handleDragEnd` in `useCallback` to prevent unnecessary re-creations during renders.
+ * 2. Readability: Refactor nested if-statements using the 'Early Return' pattern to reduce cognitive load.
+ * 3. Separation: Split the logic into smaller helper functions (e.g., `moveColumn`, `moveCard`).
+ */
+
 export const useDragAndDrop = (
     lists: BoardData,
     setLists: React.Dispatch<React.SetStateAction<BoardData>>
