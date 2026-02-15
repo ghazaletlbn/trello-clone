@@ -1,12 +1,19 @@
-import {DragEndEvent, DragOverEvent} from '@dnd-kit/core';
+import {DragEndEvent, DragOverEvent, PointerSensor, TouchSensor, useSensor, useSensors} from '@dnd-kit/core';
 import {arrayMove} from '@dnd-kit/sortable';
 import {BoardData} from '@/types/board';
-import {Dispatch, SetStateAction} from 'react';
 
 export const useDragAndDrop = (
     lists: BoardData,
-    setLists: Dispatch<SetStateAction<BoardData>>
+    setLists: React.Dispatch<React.SetStateAction<BoardData>>
 ) => {
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {distance: 5},
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {delay: 250, tolerance: 5},
+        })
+    );
 
     const findContainer = (id: string) => {
         if (lists.find(list => list.id === id)) {
@@ -19,12 +26,12 @@ export const useDragAndDrop = (
         const {active, over} = event;
         if (!over) return;
 
+        const activeId = active.id.toString();
+        const overId = over.id.toString();
+
         if (active.data.current?.type === 'Column') {
             return;
         }
-
-        const activeId = active.id.toString();
-        const overId = over.id.toString();
 
         const activeContainer = findContainer(activeId);
         const overContainer = findContainer(overId);
@@ -40,7 +47,6 @@ export const useDragAndDrop = (
         setLists((prev) => {
             const activeItems = prev.find(l => l.id === activeContainer)?.cards || [];
             const overItems = prev.find(l => l.id === overContainer)?.cards || [];
-
             const activeIndex = activeItems.findIndex(c => c.id === activeId);
             const overIndex = overItems.findIndex(c => c.id === overId);
 
@@ -91,10 +97,10 @@ export const useDragAndDrop = (
 
         if (active.data.current?.type === 'Column') {
             if (activeId !== overId) {
-                setLists((items) => {
-                    const oldIndex = items.findIndex((item) => item.id === activeId);
-                    const newIndex = items.findIndex((item) => item.id === overId);
-                    return arrayMove(items, oldIndex, newIndex);
+                setLists((lists) => {
+                    const oldIndex = lists.findIndex((l) => l.id === activeId);
+                    const newIndex = lists.findIndex((l) => l.id === overId);
+                    return arrayMove(lists, oldIndex, newIndex);
                 });
             }
             return;
@@ -128,6 +134,7 @@ export const useDragAndDrop = (
     };
 
     return {
+        sensors,
         handleDragOver,
         handleDragEnd
     };

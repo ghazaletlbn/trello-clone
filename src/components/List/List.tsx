@@ -63,6 +63,7 @@ export default function List({
         transform: CSS.Translate.toString(transform),
         cursor: 'grabbing',
         opacity: 1,
+        boxShadow: '0 5px 15px rgba(0,0,0,0.25)',
     };
 
     useEffect(() => {
