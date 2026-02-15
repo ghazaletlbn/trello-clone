@@ -1,10 +1,37 @@
-import {useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {BoardData} from '@/types/board';
 import {initialBoardData} from '@/data/initialBoard';
+
+const STORAGE_KEY = 'kanban-board-state';
 
 export const useBoardState = () => {
     const [lists, setLists] = useState<BoardData>(initialBoardData);
     const [isAddingList, setIsAddingList] = useState(false);
+    const isLoaded = useRef(false);
+    useEffect(() => {
+        try {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            if (savedData) {
+                const parsedData = JSON.parse(savedData);
+                setLists(parsedData);
+            }
+        } catch (error) {
+            console.error('Failed to load board state from localStorage:', error);
+        } finally {
+            isLoaded.current = true;
+        }
+    }, []);
+
+    useEffect(() => {
+        if (isLoaded.current) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(lists));
+            } catch (error) {
+                console.error('Failed to save board state to localStorage:', error);
+            }
+        }
+    }, [lists]);
+
     const handleAddList = (title: string) => {
         setLists(prevLists => [
             ...prevLists,
