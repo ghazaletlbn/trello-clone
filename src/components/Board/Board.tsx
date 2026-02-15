@@ -10,6 +10,7 @@ import {useDragAndDrop} from '@/hooks/useDragAndDrop';
 import {horizontalListSortingStrategy, SortableContext} from '@dnd-kit/sortable';
 import {List as ListType} from '@/types/board';
 import ListSkeleton from "@/components/ListSkeleton/ListSkeleton";
+import InlineForm from "@/components/InlineForm/InlineForm";
 
 export default function Board() {
     const {
@@ -17,10 +18,7 @@ export default function Board() {
         setLists,
         isAddingList,
         setIsAddingList,
-        newListTitle,
-        setNewListTitle,
         handleAddList,
-        handleCancelList,
         handleAddCard,
         handleDeleteList,
         handleDeleteAllCards,
@@ -108,39 +106,25 @@ export default function Board() {
                         ))}
                     </SortableContext>
 
-                    {isAddingList ? (
-                        <div className={styles.addListForm}>
-                            <input
-                                type="text"
-                                placeholder="Enter a list title..."
-                                value={newListTitle}
-                                onChange={e => setNewListTitle(e.target.value)}
-                                autoFocus
-                                className={styles.addListInput}
-                            />
-                            <div className={styles.addListActions}>
-                                <button
-                                    className={styles.addListSubmit}
-                                    onClick={handleAddList}
-                                >
-                                    Add list
-                                </button>
-                                <button
-                                    className={styles.addListCancel}
-                                    onClick={handleCancelList}
-                                >
-                                    ✕
-                                </button>
+                    <div className={styles.addListContainer}>
+                        {isAddingList ? (
+                            <div style={{width: '272px'}}>
+                                <InlineForm
+                                    placeholder="Enter a list title..."
+                                    buttonText="Add list"
+                                    onSubmit={handleAddList}
+                                    onCancel={() => setIsAddingList(false)}
+                                />
                             </div>
-                        </div>
-                    ) : (
-                        <button
-                            className={styles.addList}
-                            onClick={() => setIsAddingList(true)}
-                        >
-                            + Add another list
-                        </button>
-                    )}
+                        ) : (
+                            <button
+                                className={styles.addList}
+                                onClick={() => setIsAddingList(true)}
+                            >
+                                + Add another list
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <DragOverlay>

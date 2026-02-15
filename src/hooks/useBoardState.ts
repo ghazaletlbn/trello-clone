@@ -5,26 +5,15 @@ import {initialBoardData} from '@/data/initialBoard';
 export const useBoardState = () => {
     const [lists, setLists] = useState<BoardData>(initialBoardData);
     const [isAddingList, setIsAddingList] = useState(false);
-    const [newListTitle, setNewListTitle] = useState('');
-
-    const handleAddList = () => {
-        if (!newListTitle.trim()) return;
-
+    const handleAddList = (title: string) => {
         setLists(prevLists => [
             ...prevLists,
             {
                 id: Date.now().toString(),
-                title: newListTitle.trim(),
+                title: title,
                 cards: []
             }
         ]);
-
-        setNewListTitle('');
-        setIsAddingList(false);
-    };
-
-    const handleCancelList = () => {
-        setNewListTitle('');
         setIsAddingList(false);
     };
 
@@ -99,10 +88,7 @@ export const useBoardState = () => {
         setLists,
         isAddingList,
         setIsAddingList,
-        newListTitle,
-        setNewListTitle,
         handleAddList,
-        handleCancelList,
         handleAddCard,
         handleDeleteList,
         handleDeleteAllCards,
